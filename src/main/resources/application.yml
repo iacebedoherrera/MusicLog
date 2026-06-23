@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: musiclog
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/musiclog}
+    username: ${DB_USERNAME:musiclog}
+    password: ${DB_PASSWORD:musiclog}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  main:
+    banner-mode: off
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.musiclog: ${MUSICLOG_LOG_LEVEL:INFO}
+
+musiclog:
+  jwt:
+    secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
+    expiration: ${JWT_EXPIRATION:PT24H}
+  musicbrainz:
+    base-url: ${MUSICBRAINZ_BASE_URL:https://musicbrainz.org/ws/2}
+    cover-art-base-url: ${COVER_ART_BASE_URL:https://coverartarchive.org}
+    user-agent: ${MUSICBRAINZ_USER_AGENT:MusicLog/0.1 (contacto@example.com)}
+  spotify:
+    client-id: ${SPOTIFY_CLIENT_ID:}
+    client-secret: ${SPOTIFY_CLIENT_SECRET:}
+    redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8080/api/spotify/callback}
+    token-encryption-key: ${SPOTIFY_TOKEN_ENCRYPTION_KEY:change-me-32-byte-local-dev-key}
+    sync-interval-ms: ${SPOTIFY_SYNC_INTERVAL_MS:21600000}
+    sync-initial-delay-ms: ${SPOTIFY_SYNC_INITIAL_DELAY_MS:21600000}
+    frontend-redirect-uri: ${SPOTIFY_FRONTEND_REDIRECT_URI:http://localhost:3000/settings/integrations}

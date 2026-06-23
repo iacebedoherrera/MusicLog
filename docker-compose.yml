@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: musiclog-postgres
+    environment:
+      POSTGRES_DB: musiclog
+      POSTGRES_USER: musiclog
+      POSTGRES_PASSWORD: musiclog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musiclog -d musiclog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: musiclog-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:

@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:musiclog;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: true
+
+musiclog:
+  jwt:
+    secret: test-secret-test-secret-test-secret-test-secret
+    expiration: PT1H
+  musicbrainz:
+    base-url: https://musicbrainz.org/ws/2
+    cover-art-base-url: https://coverartarchive.org
+    user-agent: MusicLog/0.1 (contacto@example.com)
+  spotify:
+    client-id: test-client
+    client-secret: test-secret
+    redirect-uri: http://localhost:8080/api/spotify/callback
+    token-encryption-key: test-encryption-key-test-encryption-key
+    sync-interval-ms: 21600000
+    sync-initial-delay-ms: 21600000
+    frontend-redirect-uri: http://localhost:3000/settings/integrations

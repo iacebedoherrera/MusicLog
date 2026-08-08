@@ -78,6 +78,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public UserProfileResponse getProfile(UUID userId) {
+        return userRepository.findById(userId)
+                .map(UserProfileResponse::from)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    @Transactional(readOnly = true)
     public UUID getUserIdByUsername(String username) {
         return findByUsername(username).getId();
     }
@@ -139,13 +146,21 @@ public class UserService {
     }
 
     private List<UserProfileResponse> profilesByIds(List<UUID> ids) {
+        return new java.util.ArrayList<>(profilesByIdsAsMap(ids).values());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, UserProfileResponse> profilesByIdsAsMap(List<UUID> ids) {
         Map<UUID, User> users = new LinkedHashMap<>();
         userRepository.findByIdIn(ids).forEach(user -> users.put(user.getId(), user));
-        return ids.stream()
-                .map(users::get)
-                .filter(user -> user != null)
-                .map(UserProfileResponse::from)
-                .toList();
+        Map<UUID, UserProfileResponse> profiles = new LinkedHashMap<>();
+        ids.forEach(id -> {
+            User user = users.get(id);
+            if (user != null) {
+                profiles.put(id, UserProfileResponse.from(user));
+            }
+        });
+        return profiles;
     }
 
     private User findByUsername(String username) {

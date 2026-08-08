@@ -25,7 +25,7 @@ public class MusicBrainzClient {
                 .build();
     }
 
-    public Map<String, Object> search(String query, String type) {
+    public Map<String, Object> search(String query, String type, int page, int size) {
         String endpoint = switch (type) {
             case "artist" -> "/artist";
             case "album" -> "/release";
@@ -34,7 +34,8 @@ public class MusicBrainzClient {
         };
         return get(uri -> uri.path(endpoint)
                 .queryParam("query", query)
-                .queryParam("limit", 25)
+                .queryParam("limit", size)
+                .queryParam("offset", (long) page * size)
                 .queryParam("fmt", "json")
                 .build());
     }

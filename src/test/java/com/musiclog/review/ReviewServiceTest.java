@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import com.musiclog.review.dto.CreateReviewRequest;
+import com.musiclog.user.UserService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -12,8 +13,9 @@ class ReviewServiceTest {
 
     private final ReviewRepository reviewRepository = mock(ReviewRepository.class);
     private final ListeningLogRepository listeningLogRepository = mock(ListeningLogRepository.class);
+    private final UserService userService = mock(UserService.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-    private final ReviewService reviewService = new ReviewService(reviewRepository, listeningLogRepository, eventPublisher);
+    private final ReviewService reviewService = new ReviewService(reviewRepository, listeningLogRepository, userService, eventPublisher);
 
     @Test
     void createReviewRequiresRatingOrText() {

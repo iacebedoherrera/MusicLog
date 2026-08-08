@@ -1,0 +1,39 @@
+openapi: 3.0.3
+info:
+  title: MusicLog Health Endpoint
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Obtain the basic application availability signal
+      description: Requires the existing JWT authentication policy and intentionally exposes no dependency or infrastructure diagnostics.
+      tags:
+        - System
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The authenticated request reached an available application.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: Fixed basic availability indicator.
+                    enum:
+                      - UP
+              example:
+                status: UP
+        '405':
+          description: An authenticated method other than GET is not a health-check operation and does not return the health success response.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

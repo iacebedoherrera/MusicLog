@@ -8,6 +8,7 @@ import java.util.UUID;
 public record ReviewResponse(
         UUID id,
         UUID userId,
+        ReviewAuthorResponse author,
         String targetMbid,
         ReviewTargetType targetType,
         Integer rating,
@@ -16,10 +17,11 @@ public record ReviewResponse(
         Instant createdAt,
         Instant updatedAt
 ) {
-    public static ReviewResponse from(Review review) {
+    public static ReviewResponse from(Review review, ReviewAuthorResponse author) {
         return new ReviewResponse(
                 review.getId(),
                 review.getUserId(),
+                author,
                 review.getTargetMbid(),
                 review.getTargetType(),
                 review.getRating(),

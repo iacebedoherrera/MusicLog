@@ -7,6 +7,8 @@ import com.musiclog.catalog.dto.ArtistResponse;
 import com.musiclog.catalog.dto.SearchResponse;
 import com.musiclog.catalog.dto.TrackResponse;
 import com.musiclog.shared.config.MusicBrainzProperties;
+import com.musiclog.shared.web.PageResponse;
+import com.musiclog.shared.web.Pagination;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -51,9 +53,11 @@ public class CatalogService {
         this.properties = properties;
     }
 
-    public SearchResponse search(String query, String type) {
-        Map<String, Object> payload = musicBrainzClient.search(query, type);
-        return new SearchResponse(type, searchItems(payload, type));
+    public PageResponse<SearchResponse.SearchItem> search(String query, String type, int page, int size) {
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Pagination.pageable(0, size).getPageSize();
+        Map<String, Object> payload = musicBrainzClient.search(query, type, normalizedPage, normalizedSize);
+        return PageResponse.of(searchItems(payload, type), normalizedPage, normalizedSize, longValue(payload.get("count")));
     }
 
     @Transactional
@@ -135,8 +139,8 @@ public class CatalogService {
         } else {
             return Optional.empty();
         }
-        SearchResponse response = search(query, "track");
-        return response.results().stream().findFirst().map(SearchResponse.SearchItem::mbid);
+        PageResponse<SearchResponse.SearchItem> response = search(query, "track", 0, 1);
+        return response.items().stream().findFirst().map(SearchResponse.SearchItem::mbid);
     }
 
     private List<SearchResponse.SearchItem> searchItems(Map<String, Object> payload, String type) {
@@ -260,6 +264,16 @@ public class CatalogService {
             return Integer.parseInt(string);
         }
         return null;
+    }
+
+    private long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String string && !string.isBlank()) {
+            return Long.parseLong(string);
+        }
+        return 0;
     }
 
     private <T> Optional<T> read(String key, Class<T> type) {

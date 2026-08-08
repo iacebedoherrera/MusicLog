@@ -4,13 +4,19 @@ import com.musiclog.review.dto.CreateReviewRequest;
 import com.musiclog.review.dto.ListeningLogResponse;
 import com.musiclog.review.dto.LogTrackRequest;
 import com.musiclog.review.dto.ReviewResponse;
+import com.musiclog.review.dto.ReviewAuthorResponse;
 import com.musiclog.review.dto.UpdateReviewRequest;
+import com.musiclog.shared.web.PageResponse;
+import com.musiclog.user.UserService;
+import com.musiclog.user.dto.UserProfileResponse;
 import com.musiclog.review.events.ReviewCreatedEvent;
 import com.musiclog.review.events.ReviewDeletedEvent;
 import com.musiclog.review.events.ReviewUpdatedEvent;
 import com.musiclog.review.events.TrackLoggedEvent;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -25,14 +31,17 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ListeningLogRepository listeningLogRepository;
+    private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
 
     public ReviewService(
             ReviewRepository reviewRepository,
             ListeningLogRepository listeningLogRepository,
+            UserService userService,
             ApplicationEventPublisher eventPublisher) {
         this.reviewRepository = reviewRepository;
         this.listeningLogRepository = listeningLogRepository;
+        this.userService = userService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -56,7 +65,7 @@ public class ReviewService {
                 saved.getTargetMbid(),
                 saved.getTargetType(),
                 saved.getRating()));
-        return ReviewResponse.from(saved);
+        return response(saved);
     }
 
     @Transactional
@@ -66,7 +75,7 @@ public class ReviewService {
                 .orElseThrow(() -> new EntityNotFoundException("Review not found"));
         review.update(request.rating(), normalize(request.reviewText()), request.containsSpoilers());
         eventPublisher.publishEvent(new ReviewUpdatedEvent(review.getId(), review.getUserId()));
-        return ReviewResponse.from(review);
+        return response(review);
     }
 
     @Transactional
@@ -80,19 +89,18 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewResponse getReview(UUID reviewId) {
         return reviewRepository.findById(reviewId)
-                .map(ReviewResponse::from)
+                .map(this::response)
                 .orElseThrow(() -> new EntityNotFoundException("Review not found"));
     }
 
     @Transactional(readOnly = true)
-    public Page<ReviewResponse> myReviews(UUID userId, Pageable pageable) {
-        return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable).map(ReviewResponse::from);
+    public PageResponse<ReviewResponse> myReviews(UUID userId, Pageable pageable) {
+        return responses(reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable));
     }
 
     @Transactional(readOnly = true)
-    public Page<ReviewResponse> reviewsForTarget(String mbid, ReviewTargetType targetType, Pageable pageable) {
-        return reviewRepository.findByTargetMbidAndTargetTypeOrderByCreatedAtDesc(mbid, targetType, pageable)
-                .map(ReviewResponse::from);
+    public PageResponse<ReviewResponse> reviewsForTarget(String mbid, ReviewTargetType targetType, Pageable pageable) {
+        return responses(reviewRepository.findByTargetMbidAndTargetTypeOrderByCreatedAtDesc(mbid, targetType, pageable));
     }
 
     @Transactional
@@ -124,5 +132,21 @@ public class ReviewService {
 
     private String normalize(String text) {
         return text == null || text.isBlank() ? null : text.trim();
+    }
+
+    private ReviewResponse response(Review review) {
+        return ReviewResponse.from(review, ReviewAuthorResponse.from(userService.getProfile(review.getUserId())));
+    }
+
+    private PageResponse<ReviewResponse> responses(Page<Review> reviews) {
+        List<Review> items = reviews.getContent();
+        Map<UUID, UserProfileResponse> authors = userService.profilesByIdsAsMap(items.stream()
+                .map(Review::getUserId)
+                .distinct()
+                .toList());
+        List<ReviewResponse> responses = items.stream()
+                .map(review -> ReviewResponse.from(review, ReviewAuthorResponse.from(authors.get(review.getUserId()))))
+                .toList();
+        return PageResponse.from(reviews, responses);
     }
 }

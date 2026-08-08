@@ -29,6 +29,14 @@ spring:
 server:
   port: ${PORT:8080}
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
 logging:
   config: classpath:logback-spring.xml
   level:

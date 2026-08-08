@@ -7,6 +7,8 @@ import com.musiclog.review.dto.CreateReviewRequest;
 import com.musiclog.review.dto.ReviewResponse;
 import com.musiclog.review.events.ReviewCreatedEvent;
 import com.musiclog.social.ActivityRepository;
+import com.musiclog.user.User;
+import com.musiclog.user.UserRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +28,14 @@ class ReviewModuleIntegrationTest {
     @Autowired
     private ApplicationEvents events;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Test
     void creatingReviewPublishesEventAndSocialConsumesIt() {
-        UUID userId = UUID.randomUUID();
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        User user = userRepository.save(new User("reviewer-" + suffix, suffix + "@example.test", "hash", "Reviewer"));
+        UUID userId = user.getId();
 
         ReviewResponse response = reviewService.createReview(userId, new CreateReviewRequest(
                 "album-mbid-" + UUID.randomUUID(),
@@ -40,5 +47,6 @@ class ReviewModuleIntegrationTest {
         assertThat(events.stream(ReviewCreatedEvent.class))
                 .anySatisfy(event -> assertThat(event.reviewId()).isEqualTo(response.id()));
         assertThat(activityRepository.findAll()).anySatisfy(activity -> assertThat(activity.getTargetId()).isEqualTo(response.id()));
+        assertThat(response.author().username()).isEqualTo(user.getUsername());
     }
 }

@@ -3,8 +3,8 @@ package com.musiclog.social;
 import com.musiclog.review.events.ReviewCreatedEvent;
 import com.musiclog.review.events.TrackLoggedEvent;
 import com.musiclog.social.dto.ActivityResponse;
-import com.musiclog.social.dto.FeedResponse;
 import com.musiclog.social.dto.LikeResponse;
+import com.musiclog.shared.web.PageResponse;
 import com.musiclog.user.UserService;
 import com.musiclog.user.events.UserFollowedEvent;
 import java.time.Instant;
@@ -86,7 +86,7 @@ public class FeedService {
         return activity;
     }
 
-    public FeedResponse feed(UUID userId, int page, int size) {
+    public PageResponse<ActivityResponse> feed(UUID userId, int page, int size) {
         int normalizedSize = Math.max(1, Math.min(size, 50));
         int normalizedPage = Math.max(page, 0);
         long start = (long) normalizedPage * normalizedSize;
@@ -94,8 +94,9 @@ public class FeedService {
         List<ActivityResponse> activities = new ArrayList<>();
         try {
             List<String> ids = redisTemplate.opsForList().range(feedKey(userId), start, end);
+            Long total = redisTemplate.opsForList().size(feedKey(userId));
             if (ids == null) {
-                return new FeedResponse(List.of(), normalizedPage, normalizedSize);
+                return PageResponse.of(List.of(), normalizedPage, normalizedSize, total == null ? 0 : total);
             }
             for (String id : ids) {
                 readActivity(id).ifPresent(activities::add);
@@ -103,13 +104,20 @@ public class FeedService {
         } catch (RedisConnectionFailureException exception) {
             log.debug("Feed Redis read skipped for user {}", userId, exception);
         }
-        return new FeedResponse(activities, normalizedPage, normalizedSize);
+        long total = 0;
+        try {
+            Long sizeFromRedis = redisTemplate.opsForList().size(feedKey(userId));
+            total = sizeFromRedis == null ? 0 : sizeFromRedis;
+        } catch (RedisConnectionFailureException exception) {
+            log.debug("Feed Redis count skipped for user {}", userId, exception);
+        }
+        return PageResponse.of(activities, normalizedPage, normalizedSize, total);
     }
 
     @Transactional(readOnly = true)
-    public Page<ActivityResponse> publicActivity(String username, Pageable pageable) {
+    public PageResponse<ActivityResponse> publicActivity(String username, Pageable pageable) {
         UUID actorId = userService.getUserIdByUsername(username);
-        return activityRepository.findByActorIdOrderByCreatedAtDesc(actorId, pageable).map(ActivityResponse::from);
+        return PageResponse.from(activityRepository.findByActorIdOrderByCreatedAtDesc(actorId, pageable).map(ActivityResponse::from));
     }
 
     @Transactional

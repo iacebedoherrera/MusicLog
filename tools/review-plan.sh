@@ -4,13 +4,14 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Uso:
-  ./tools/review-plan.sh <directorio-de-feature>
+  ./tools/review-plan.sh openspec/changes/<change-name>
 
 Ejemplo:
-  ./tools/review-plan.sh specs/001-export-csv
+  ./tools/review-plan.sh openspec/changes/export-csv
 
-El directorio debe contener spec.md y plan.md.
-El script genera o sobrescribe review.md.
+El directorio debe ser un cambio OpenSpec y contener proposal.md.
+El script lee los deltas de specs/, design.md y tasks.md cuando existen.
+Genera o sobrescribe review.md dentro del cambio.
 USAGE
 }
 
@@ -19,35 +20,64 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
-FEATURE_DIR="$1"
-SPEC_FILE="$FEATURE_DIR/spec.md"
-PLAN_FILE="$FEATURE_DIR/plan.md"
-TASKS_FILE="$FEATURE_DIR/tasks.md"
-REVIEW_FILE="$FEATURE_DIR/review.md"
+CHANGE_DIR="$1"
+PROPOSAL_FILE="$CHANGE_DIR/proposal.md"
+DESIGN_FILE="$CHANGE_DIR/design.md"
+TASKS_FILE="$CHANGE_DIR/tasks.md"
+CONSTITUTION_FILE="docs/development-constitution.md"
+REVIEW_FILE="$CHANGE_DIR/review.md"
 
-for required_file in "$SPEC_FILE" "$PLAN_FILE"; do
+if [[ ! -d "$CHANGE_DIR" ]]; then
+  echo "Error: no existe el directorio del cambio: $CHANGE_DIR" >&2
+  exit 1
+fi
+
+for required_file in "$PROPOSAL_FILE" "$CONSTITUTION_FILE"; do
   if [[ ! -f "$required_file" ]]; then
     echo "Error: falta el archivo requerido: $required_file" >&2
     exit 1
   fi
 done
 
-TASKS_CONTEXT="No existe todavía tasks.md; revisa únicamente especificación y plan."
+DESIGN_CONTEXT="No existe todavía design.md; revisa la propuesta y los demás artefactos disponibles."
+if [[ -f "$DESIGN_FILE" ]]; then
+  DESIGN_CONTEXT="$(cat "$DESIGN_FILE")"
+fi
+
+TASKS_CONTEXT="No existe todavía tasks.md; revisa la propuesta, el diseño y los deltas disponibles."
 if [[ -f "$TASKS_FILE" ]]; then
   TASKS_CONTEXT="$(cat "$TASKS_FILE")"
+fi
+
+SPECS_CONTEXT="No existen deltas de especificación para este cambio."
+if [[ -d "$CHANGE_DIR/specs" ]]; then
+  DELTA_FILES=()
+  while IFS= read -r delta_file; do
+    DELTA_FILES+=("$delta_file")
+  done < <(find "$CHANGE_DIR/specs" -type f -name '*.md' -print | sort)
+
+  if [[ ${#DELTA_FILES[@]} -gt 0 ]]; then
+    SPECS_CONTEXT=""
+    for delta_file in "${DELTA_FILES[@]}"; do
+      SPECS_CONTEXT+=$'\n--- DELTA: '"$delta_file"$' ---\n'
+      SPECS_CONTEXT+="$(cat "$delta_file")"
+      SPECS_CONTEXT+=$'\n'
+    done
+  fi
 fi
 
 PROMPT="$(cat <<EOF_PROMPT
 Actúas como revisor técnico independiente y adversarial para MusicLog.
 
-Tu objetivo es determinar si el plan puede pasar a generación de tareas e
-implementación. No implementes código, no modifiques archivos y no reescribas
-la especificación ni el plan. Inspecciona el repositorio en modo solo lectura.
+Tu objetivo es determinar si este cambio OpenSpec puede pasar a aprobación y
+aplicación. No implementes código, no modifiques archivos y no reescribas los
+artefactos. Inspecciona el repositorio en modo solo lectura.
 
-Aplica obligatoriamente `.specify/memory/constitution.md`.
+Aplica obligatoriamente el archivo docs/development-constitution.md.
 
 Comprueba como mínimo:
-- Cumplimiento de requisitos y criterios de aceptación de spec.md.
+- Coherencia entre proposal.md, los deltas de especificación, design.md y tasks.md cuando existan.
+- Cumplimiento de requisitos y criterios de aceptación del cambio.
 - Límites de módulos de Spring Modulith y dependencias entre módulos.
 - Compatibilidad de API, DTOs, eventos y persistencia.
 - Cambios de Flyway y compatibilidad de PostgreSQL.
@@ -60,12 +90,12 @@ Comprueba como mínimo:
 
 Un problema BLOCKING solo puede ser algo que pueda provocar un fallo funcional,
 vulnerabilidad, regresión, incompatibilidad, incumplimiento de la constitución
-o que impida implementar correctamente. No uses BLOCKING para preferencias de
-estilo.
+o que impida aplicar correctamente el cambio. No uses BLOCKING para preferencias
+de estilo.
 
 Devuelve EXCLUSIVAMENTE Markdown y usa exactamente esta estructura:
 
-# Revisión técnica del plan
+# Revisión técnica del cambio
 
 ## Veredicto
 VERDICT: APPROVED
@@ -81,7 +111,7 @@ VERDICT: HUMAN_DECISION_REQUIRED
 - [BLOCKING|WARNING|INFO] ID: título
   - Evidencia: archivo, módulo, contrato o requisito concreto.
   - Impacto: consecuencia concreta.
-  - Cambio requerido: modificación mínima necesaria del plan.
+  - Cambio requerido: modificación mínima necesaria de los artefactos.
 
 Si no hay hallazgos, escribe: "Sin hallazgos".
 
@@ -98,15 +128,18 @@ Reglas de veredicto:
   compatibilidad o arquitectura que no pueda deducirse del repositorio.
 
 --- CONSTITUCIÓN ---
-$(cat .specify/memory/constitution.md)
+$(cat "$CONSTITUTION_FILE")
 
---- ESPECIFICACIÓN ---
-$(cat "$SPEC_FILE")
+--- PROPUESTA ---
+$(cat "$PROPOSAL_FILE")
 
---- PLAN ---
-$(cat "$PLAN_FILE")
+--- DELTAS DE ESPECIFICACIÓN ---
+$SPECS_CONTEXT
 
---- TAREAS, SI EXISTEN ---
+--- DISEÑO ---
+$DESIGN_CONTEXT
+
+--- TAREAS ---
 $TASKS_CONTEXT
 EOF_PROMPT
 )"

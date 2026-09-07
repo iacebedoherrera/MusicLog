@@ -33,32 +33,30 @@ Los módulos se comunican mediante eventos de aplicación, aceptando consistenci
 - Docker y Docker Compose
 - Una aplicación de Spotify Developer (solo para la integración con Spotify)
 
-## Arranque local
+## Arranque local con Docker Compose
 
-1. Inicia PostgreSQL y Redis:
+Configura las variables de entorno necesarias y construye todas las imágenes:
 
-   ```bash
-   docker compose up -d
-   ```
+```bash
+export JWT_SECRET='un-secreto-largo-y-aleatorio-de-al-menos-32-caracteres'
+export SPOTIFY_CLIENT_ID='tu-client-id'
+export SPOTIFY_CLIENT_SECRET='tu-client-secret'
+export SPOTIFY_TOKEN_ENCRYPTION_KEY='una-clave-local-segura-de-32-bytes'
+docker compose up -d --build
+```
 
-2. Configura las variables de entorno necesarias. Para desarrollo básico, las credenciales de base de datos ya tienen valores por defecto. Genera un secreto JWT seguro antes de desplegar fuera de local.
+Compose despliega PostgreSQL, Redis, el backend y el frontend. La aplicación web
+queda disponible en `http://localhost:3000`; la API y Swagger siguen accesibles
+directamente en `http://localhost:8080`. Flyway aplica las migraciones
+automáticamente al arrancar el backend.
 
-   ```bash
-   export JWT_SECRET='un-secreto-largo-y-aleatorio-de-al-menos-32-caracteres'
-   export SPOTIFY_CLIENT_ID='tu-client-id'
-   export SPOTIFY_CLIENT_SECRET='tu-client-secret'
-   export SPOTIFY_TOKEN_ENCRYPTION_KEY='una-clave-local-segura-de-32-bytes'
-   ```
+Para ver los logs:
 
-3. Ejecuta la aplicación:
+```bash
+docker compose logs -f backend frontend
+```
 
-   ```bash
-   mvn spring-boot:run
-   ```
-
-La API quedará disponible en `http://localhost:8080`. Flyway aplicará las migraciones automáticamente al arrancar.
-
-Para detener la infraestructura:
+Para detener los servicios:
 
 ```bash
 docker compose down
@@ -66,11 +64,16 @@ docker compose down
 
 > `docker compose down -v` también elimina los datos locales de PostgreSQL y Redis.
 
+Para desarrollar el backend o el frontend fuera de Docker, puedes levantar solo
+la infraestructura con `docker compose up -d postgres redis` y seguir los
+comandos de ejecución indicados en las respectivas herramientas del proyecto.
+
 ## Configuración
 
 | Variable | Valor por defecto | Descripción |
 | --- | --- | --- |
 | `PORT` | `8080` | Puerto HTTP de la aplicación. |
+| `BACKEND_PORT` / `FRONTEND_PORT` | `8080` / `3000` | Puertos publicados por Compose para la API y la aplicación web. |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/musiclog` | URL de PostgreSQL. |
 | `DB_USERNAME` / `DB_PASSWORD` | `musiclog` / `musiclog` | Credenciales de PostgreSQL local. |
 | `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | Conexión a Redis. |

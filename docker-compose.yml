@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: musiclog-postgres
     environment:
-      POSTGRES_DB: musiclog
-      POSTGRES_USER: musiclog
-      POSTGRES_PASSWORD: musiclog
+      POSTGRES_DB: ${POSTGRES_DB:-musiclog}
+      POSTGRES_USER: ${POSTGRES_USER:-musiclog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-musiclog}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U musiclog -d musiclog"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-musiclog} -d ${POSTGRES_DB:-musiclog}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,6 +29,52 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: musiclog-backend
+    environment:
+      DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-musiclog}"
+      DB_USERNAME: "${POSTGRES_USER:-musiclog}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD:-musiclog}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      JWT_SECRET: "${JWT_SECRET:-change-me-change-me-change-me-change-me}"
+      JWT_EXPIRATION: "${JWT_EXPIRATION:-PT24H}"
+      MUSICBRAINZ_USER_AGENT: "${MUSICBRAINZ_USER_AGENT:-MusicLog/0.1 (contacto@example.com)}"
+      SPOTIFY_CLIENT_ID: "${SPOTIFY_CLIENT_ID:-}"
+      SPOTIFY_CLIENT_SECRET: "${SPOTIFY_CLIENT_SECRET:-}"
+      SPOTIFY_REDIRECT_URI: "${SPOTIFY_REDIRECT_URI:-http://localhost:8080/api/spotify/callback}"
+      SPOTIFY_TOKEN_ENCRYPTION_KEY: "${SPOTIFY_TOKEN_ENCRYPTION_KEY:-change-me-32-byte-local-dev-key}"
+      SPOTIFY_FRONTEND_REDIRECT_URI: "${SPOTIFY_FRONTEND_REDIRECT_URI:-http://localhost:3000/settings/integrations}"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/v3/api-docs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "${VITE_API_URL:-/api}"
+    container_name: musiclog-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres-data:

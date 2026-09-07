@@ -45,6 +45,11 @@ que entregue la SPA y reenvíe `/api`, `/v3/api-docs` y `/swagger-ui` al backend
 este modo no hace falta habilitar CORS entre orígenes. El proxy configurado en Vite
 no es una configuración de producción.
 
+El despliegue completo del proyecto ya incluye este reverse proxy mediante
+`docker compose up -d --build` desde la raíz. El frontend se sirve en
+`http://localhost:3000` y reenvía las rutas de API y OpenAPI al servicio interno
+`backend`.
+
 La persistencia de JWT en `localStorage` está aislada en
 `src/features/auth/authStorage.ts` y es temporal para desarrollo. Antes de publicar,
 migrar a cookies `HttpOnly`, `Secure` y `SameSite`, junto con una estrategia de

@@ -83,11 +83,12 @@ ESLint y la organización por `features`, `components`, `pages` y `api` ya prese
 
 ### VII. Especificación, plan, tareas y revisión técnica antes de implementar
 
-No se implementa funcionalidad hasta que existan una especificación aprobada (`spec.md`), un plan
-(`plan.md`), tareas dependientes y accionables (`tasks.md`) y una revisión técnica registrada del
-plan. La revisión DEBE comprobar al menos límites de módulo, compatibilidad de API y datos, eventos,
-seguridad, migraciones, dependencias y estrategia de pruebas. Las excepciones a esta puerta de entrada
-requieren aprobación humana explícita y su alcance debe quedar escrito.
+No se implementa funcionalidad hasta que existan una propuesta aprobada (`proposal.md`), los deltas
+de especificación aplicables cuando haya cambios de comportamiento, un diseño técnico (`design.md`),
+tareas dependientes y accionables (`tasks.md`) y una revisión técnica registrada del cambio. La
+revisión DEBE comprobar al menos límites de módulo, compatibilidad de API y datos, eventos, seguridad,
+migraciones, dependencias y estrategia de pruebas. Las excepciones a esta puerta de entrada requieren
+aprobación humana explícita y su alcance debe quedar escrito.
 
 ### VIII. Ramas dedicadas, PR y cierre trazable
 
@@ -121,14 +122,14 @@ mismo cambio compatible.
 
 ## Flujo de desarrollo y calidad
 
-1. Registrar la necesidad mediante `$speckit-specify` y resolver las ambigüedades materiales con
-   `$speckit-clarify`.
-2. Elaborar el diseño con `$speckit-plan`, incluyendo impacto en módulos, API, datos, eventos,
-   seguridad, dependencias y pruebas; completar su revisión técnica.
-3. Generar tareas con `$speckit-tasks`, crear una rama dedicada y ejecutar solo las tareas aprobadas
-   con `$speckit-implement`.
-4. Verificar la coherencia con `$speckit-analyze` cuando existan especificación, plan y tareas, y
-   ejecutar los controles exigidos por el principio II antes de abrir o actualizar el PR.
+1. Registrar la necesidad mediante `ai-flow` en un cambio OpenSpec y resolver las ambigüedades
+   materiales antes de continuar.
+2. Elaborar `design.md`, incluyendo impacto en módulos, API, datos, eventos, seguridad,
+   dependencias y pruebas; añadir deltas de especificación cuando cambie el comportamiento.
+3. Generar `tasks.md`, completar la revisión técnica independiente y obtener la aprobación humana
+   antes de aplicar el cambio.
+4. Validar los artefactos y ejecutar los controles exigidos por el principio II antes de abrir o
+   actualizar el PR.
 5. Revisar el PR contra esta constitución. Cualquier incumplimiento exige una excepción humana
    explícita, documentada con alcance, motivo, mitigación y fecha de revisión.
 

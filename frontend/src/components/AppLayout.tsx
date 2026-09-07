@@ -31,6 +31,9 @@ export function AppLayout() {
                 <span className="hidden px-2 text-sm text-stone-500 sm:inline">
                   Hola, {user.displayName}
                 </span>
+                <NavLink className={navLinkClass} to="/settings/account">
+                  Cuenta
+                </NavLink>
                 <button
                   className="rounded-md px-3 py-2 text-sm font-semibold text-stone-600 hover:text-ink"
                   onClick={onLogout}

@@ -1,6 +1,7 @@
 package com.musiclog.user;
 
 import com.musiclog.shared.security.AuthenticatedUser;
+import com.musiclog.user.dto.UpdateAccountRequest;
 import com.musiclog.user.dto.UpdateProfileRequest;
 import com.musiclog.user.dto.UserProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,6 +50,17 @@ public class UserController {
     @SecurityRequirement(name = "bearerAuth")
     public UserProfileResponse updateMe(Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
         return userService.updateProfile(AuthenticatedUser.from(authentication).id(), request);
+    }
+
+    @PutMapping("/me/account")
+    @Operation(
+            summary = "Actualizar los ajustes de mi cuenta",
+            description = "Actualiza el nombre mostrado, el nombre de usuario y opcionalmente la contraseña. La contraseña nunca forma parte de la respuesta.")
+    @SecurityRequirement(name = "bearerAuth")
+    public UserProfileResponse updateAccount(
+            Authentication authentication,
+            @Valid @RequestBody UpdateAccountRequest request) {
+        return userService.updateAccount(AuthenticatedUser.from(authentication).id(), request);
     }
 
     @PostMapping("/{username}/follow")

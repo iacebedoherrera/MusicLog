@@ -25,6 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/spotify/callback").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me/account").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*", "/api/users/*/followers", "/api/users/*/following", "/api/users/*/activity").permitAll()

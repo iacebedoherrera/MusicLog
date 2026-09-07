@@ -79,6 +79,15 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
+    public void updateAccount(String displayName, String username, String passwordHash) {
+        this.displayName = displayName;
+        this.username = username;
+        if (passwordHash != null) {
+            this.passwordHash = passwordHash;
+        }
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getId() {
         return id;
     }

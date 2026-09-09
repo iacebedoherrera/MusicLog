@@ -1,9 +1,11 @@
 package com.musiclog.user;
 
+import com.musiclog.shared.exception.ApiFieldErrorException;
 import com.musiclog.shared.security.JwtService;
 import com.musiclog.user.dto.LoginRequest;
 import com.musiclog.user.dto.LoginResponse;
 import com.musiclog.user.dto.RegisterRequest;
+import com.musiclog.user.dto.UpdateAccountRequest;
 import com.musiclog.user.dto.UpdateProfileRequest;
 import com.musiclog.user.dto.UserProfileResponse;
 import com.musiclog.user.events.UserFollowedEvent;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -98,6 +101,31 @@ public class UserService {
     }
 
     @Transactional
+    public UserProfileResponse updateAccount(UUID userId, UpdateAccountRequest request) {
+        validateAccountRequest(request);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (userRepository.existsByUsernameIgnoreCaseAndIdNot(request.username(), userId)) {
+            throw usernameConflict();
+        }
+
+        String passwordHash = null;
+        if (!isEmpty(request.newPassword())) {
+            passwordHash = passwordEncoder.encode(request.newPassword());
+        }
+        user.updateAccount(request.displayName(), request.username(), passwordHash);
+
+        try {
+            userRepository.save(user);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw usernameConflict();
+        }
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
     public void follow(UUID followerId, String usernameToFollow) {
         User follower = userRepository.findById(followerId)
                 .orElseThrow(() -> new EntityNotFoundException("Follower not found"));
@@ -166,5 +194,56 @@ public class UserService {
     private User findByUsername(String username) {
         return userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+    }
+
+    private void validateAccountRequest(UpdateAccountRequest request) {
+        Map<String, String> fields = new LinkedHashMap<>();
+        if (request == null) {
+            fields.put("request", "El cuerpo de la petición es obligatorio.");
+            throw new ApiFieldErrorException(HttpStatus.BAD_REQUEST, "Validation failed", fields);
+        }
+        if (request.displayName() == null || request.displayName().isBlank()) {
+            fields.put("displayName", "El nombre mostrado es obligatorio.");
+        } else if (request.displayName().length() > 100) {
+            fields.put("displayName", "El nombre mostrado no puede superar 100 caracteres.");
+        }
+        if (request.username() == null || request.username().isBlank()) {
+            fields.put("username", "El nombre de usuario es obligatorio.");
+        } else if (request.username().length() > 50) {
+            fields.put("username", "El nombre de usuario no puede superar 50 caracteres.");
+        }
+
+        String newPassword = request.newPassword();
+        String confirmation = request.newPasswordConfirmation();
+        boolean passwordEmpty = isEmpty(newPassword);
+        boolean confirmationEmpty = isEmpty(confirmation);
+        if (passwordEmpty != confirmationEmpty) {
+            fields.put("newPassword", "La nueva contraseña y su confirmación deben enviarse juntas.");
+            fields.put("newPasswordConfirmation", "La nueva contraseña y su confirmación deben enviarse juntas.");
+        } else if (!passwordEmpty) {
+            if (newPassword.length() < 8 || newPassword.length() > 100) {
+                fields.put("newPassword", "La nueva contraseña debe tener entre 8 y 100 caracteres.");
+            }
+            if (confirmation.length() < 8 || confirmation.length() > 100) {
+                fields.put("newPasswordConfirmation", "La confirmación debe tener entre 8 y 100 caracteres.");
+            }
+            if (!newPassword.equals(confirmation)) {
+                fields.put("newPasswordConfirmation", "Las contraseñas no coinciden.");
+            }
+        }
+        if (!fields.isEmpty()) {
+            throw new ApiFieldErrorException(HttpStatus.BAD_REQUEST, "Validation failed", fields);
+        }
+    }
+
+    private static boolean isEmpty(String value) {
+        return value == null || value.isEmpty();
+    }
+
+    private static ApiFieldErrorException usernameConflict() {
+        return new ApiFieldErrorException(
+                HttpStatus.CONFLICT,
+                "Username already exists",
+                Map.of("username", "El nombre de usuario ya está en uso."));
     }
 }

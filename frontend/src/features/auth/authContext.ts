@@ -7,6 +7,7 @@ export interface AuthContextValue {
   isRestoringSession: boolean;
   login: (input: LoginInput) => Promise<UserProfile>;
   register: (input: RegisterInput) => Promise<UserProfile>;
+  replaceUser: (profile: UserProfile) => void;
   logout: () => void;
 }
 

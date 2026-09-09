@@ -27,6 +27,16 @@ public class GlobalExceptionHandler {
                 fields));
     }
 
+    @ExceptionHandler(ApiFieldErrorException.class)
+    ResponseEntity<ApiError> handleFieldError(ApiFieldErrorException exception, HttpServletRequest request) {
+        return ResponseEntity.status(exception.status()).body(ApiError.validation(
+                exception.status().value(),
+                exception.status().getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                exception.fieldErrors()));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> handleResponseStatus(ResponseStatusException exception, HttpServletRequest request) {
         int status = exception.getStatusCode().value();

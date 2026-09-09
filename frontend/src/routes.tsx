@@ -6,6 +6,7 @@ import { AlbumDetailPage, ArtistDetailPage, TrackDetailPage } from './pages/Cata
 import { CatalogSearchPage } from './pages/CatalogSearchPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ReviewDetailPage, ReviewFormPage } from './pages/ReviewPages';
+import { AccountSettingsPage } from './pages/AccountSettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <ReviewFormPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'settings/account',
+        element: (
+          <RequireAuth>
+            <AccountSettingsPage />
           </RequireAuth>
         ),
       },

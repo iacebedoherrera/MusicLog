@@ -43,7 +43,7 @@ correcta.
 | Área                | Rutas                                                                                                                               | Cuerpo o respuesta relevante                                                                                                                                  |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Autenticación       | `POST /api/auth/register`, `POST /api/auth/login`                                                                                   | Registro: username, email, password, displayName. Login: usernameOrEmail, password; devuelve token, userId y username.                                        |
-| Usuario             | `GET /api/users/me`, `GET /api/users/{username}`, `PUT /api/users/me`                                                               | Perfil: id, username, displayName, bio, avatarUrl, createdAt.                                                                                                 |
+| Usuario             | `GET /api/users/me`, `GET /api/users/{username}`, `PUT /api/users/me`, `PUT /api/users/me/account`                                | Perfil: id, username, displayName, bio, avatarUrl, createdAt. Ajustes de cuenta: displayName, username y pareja opcional de nueva contraseña.                 |
 | Social de usuario   | `POST`/`DELETE /api/users/{username}/follow`, `GET .../followers`, `GET .../following`, `GET .../activity`                          | Follow protegido. Activity usa paginación uniforme.                                                                                                           |
 | Catálogo            | `GET /api/catalog/search?q=&type=&page=&size=`, `GET /artists/{mbid}`, `/albums/{mbid}`, `/tracks/{mbid}`, `/artists/{mbid}/albums` | `type`: artist, album o track. Las fichas incluyen MBID y relaciones MusicBrainz.                                                                             |
 | Reseñas             | `POST /api/reviews`, `GET`/`PUT`/`DELETE /api/reviews/{id}`, `GET /api/reviews/me`                                                  | Crear: targetMbid, targetType (ALBUM/ARTIST/TRACK), rating opcional 1–10, reviewText opcional y containsSpoilers. Crear y editar requieren autor autenticado. |
@@ -51,6 +51,19 @@ correcta.
 | Listening log       | `POST /api/listening-log`, `GET /api/listening-log/me`                                                                              | Alta: trackMbid y listenedAt ISO-8601 opcional. Historial paginado.                                                                                           |
 | Feed y likes        | `GET /api/feed?page=&size=`, `POST`/`DELETE /api/reviews/{id}/like`, `GET /api/reviews/{id}/likes`                                  | Feed y actividad pública paginados; acciones protegidas.                                                                                                      |
 | Spotify             | `GET /api/spotify/connect`, callback, status, tops; `POST /sync`; `DELETE /disconnect`                                              | Todas salvo callback requieren JWT. El callback redirige a `/settings/integrations`.                                                                          |
+
+### Ajustes de cuenta
+
+`PUT /api/users/me/account` requiere JWT y recibe siempre `displayName` y `username`.
+Ambos son obligatorios; sus máximos son 100 y 50 caracteres respectivamente. Los campos
+`newPassword` y `newPasswordConfirmation` son opcionales como pareja: deben quedar ambos
+vacíos o enviarse ambos con entre 8 y 100 caracteres y el mismo valor.
+
+La respuesta es un `UserProfile` (`id`, `username`, `displayName`, `bio`, `avatarUrl` y
+`createdAt`); nunca contiene la contraseña ni su hash. Una validación devuelve HTTP 400
+con `fieldErrors` por campo. Si el nombre de usuario ya pertenece a otra cuenta sin
+distinguir mayúsculas y minúsculas, devuelve HTTP 409 con `fieldErrors.username` y no
+aplica ningún cambio.
 
 ## Límites que no se simulan en este vertical
 

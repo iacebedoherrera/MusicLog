@@ -55,7 +55,7 @@ function PasswordField({ id, label, value, error, onChange }: PasswordFieldProps
         <button
           aria-label={`${isVisible ? 'Ocultar' : 'Mostrar'} ${label.toLowerCase()}`}
           aria-pressed={isVisible}
-          className="absolute right-2 top-1/2 rounded-md p-2 text-stone-500 hover:text-ink"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-stone-500 hover:text-ink"
           onClick={() => setIsVisible((visible) => !visible)}
           type="button"
         >

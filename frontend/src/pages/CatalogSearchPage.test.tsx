@@ -30,7 +30,7 @@ describe('CatalogSearchPage', () => {
 
     const selector = screen.getByRole('combobox', { name: 'Tipo de búsqueda' });
 
-    expect(selector).toHaveClass('appearance-none', 'pr-10');
+    expect(selector).toHaveClass('appearance-none', 'bg-none', 'pr-10');
     expect(selector.parentElement).toHaveClass('relative');
   });
 });

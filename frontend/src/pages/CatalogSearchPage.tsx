@@ -84,7 +84,7 @@ export function CatalogSearchPage() {
           />
           <div className="relative w-full sm:w-36">
             <select
-              className="w-full appearance-none rounded-xl border-stone-300 bg-white px-4 py-3 pr-10 font-semibold outline-none focus:border-signal focus:ring-signal"
+              className="w-full appearance-none rounded-xl border-stone-300 bg-none bg-white px-4 py-3 pr-10 font-semibold outline-none focus:border-signal focus:ring-signal"
               value={selectedType}
               onChange={(event) => setSelectedType(event.target.value as CatalogSearchType)}
               aria-label="Tipo de búsqueda"

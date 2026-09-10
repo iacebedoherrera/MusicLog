@@ -82,18 +82,30 @@ export function CatalogSearchPage() {
             minLength={2}
             required
           />
-          <select
-            className="rounded-xl border-stone-300 bg-white px-4 py-3 font-semibold outline-none focus:border-signal focus:ring-signal"
-            value={selectedType}
-            onChange={(event) => setSelectedType(event.target.value as CatalogSearchType)}
-            aria-label="Tipo de búsqueda"
-          >
-            {searchTypes.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative w-full sm:w-36">
+            <select
+              className="w-full appearance-none rounded-xl border-stone-300 bg-none bg-white px-4 py-3 pr-10 font-semibold outline-none focus:border-signal focus:ring-signal"
+              value={selectedType}
+              onChange={(event) => setSelectedType(event.target.value as CatalogSearchType)}
+              aria-label="Tipo de búsqueda"
+            >
+              {searchTypes.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
           <button className="rounded-xl bg-ink px-6 py-3 font-semibold text-white hover:bg-moss">
             Buscar
           </button>
@@ -110,7 +122,9 @@ export function CatalogSearchPage() {
           La búsqueda requiere al menos dos caracteres.
         </EmptyState>
       ) : null}
-      {search.isPending ? <LoadingState label="Buscando en el catálogo…" /> : null}
+      {query.length >= 2 && search.isPending ? (
+        <LoadingState label="Buscando en el catálogo…" />
+      ) : null}
       {search.isError ? (
         <ErrorState error={search.error} retry={() => void search.refetch()} />
       ) : null}
